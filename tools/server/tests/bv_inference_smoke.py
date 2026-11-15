@@ -117,7 +117,7 @@ def exercise(binary, model, role, directory):
             require_status(status, 200, f"{role} health")
             if headers.get("Cache-Control", "").lower() != "no-store":
                 raise AssertionError("BV inference response must set Cache-Control: no-store")
-            if headers.get("X-Bv-Inference-Role", "").lower() != role:
+            if next((value for key, value in headers.items() if key.lower() == "x-bv-inference-role"), "").lower() != role:
                 raise AssertionError("Server did not attest its expected inference role")
             for path in ("/", "/tools", "/slots", "/metrics",
                          "/v1/responses", "/v1/chat/completions/control",
