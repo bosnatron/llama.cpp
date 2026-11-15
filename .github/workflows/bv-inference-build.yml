@@ -1,0 +1,41 @@
+name: BV inference-only fork build
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'tools/server/server-http.cpp'
+      - 'tools/server/tests/unit/test_bv_inference.py'
+      - '.github/workflows/bv-inference-build.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compile:
+    name: Compile forked inference server (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Configure minimal CPU inference build
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DLLAMA_BUILD_SERVER=ON -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_CURL=OFF -DGGML_NATIVE=OFF
+      - name: Compile llama-server with BV HTTP role policy
+        run: cmake --build build --config Release --target llama-server --parallel 4
+      - name: Verify executable exists on Linux
+        if: runner.os == 'Linux'
+        run: test -x build/bin/llama-server && build/bin/llama-server --version
+      - name: Verify executable exists on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $binary = Get-ChildItem build -Recurse -Filter llama-server.exe | Select-Object -First 1
+          if (-not $binary) { throw 'Compiled Windows llama-server.exe not found' }
+          & $binary.FullName --version
