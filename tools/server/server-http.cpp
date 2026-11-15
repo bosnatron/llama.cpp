@@ -22,6 +22,8 @@
 // database records, or user identity are embedded here. Perl owns authorization.
 enum class bv_inference_role { off, chat, embedding, invalid };
 
+static bool addr_is_loopback(const std::string & addr);
+
 static bv_inference_role bv_role_from_env() {
     const char * value = std::getenv("BV_INFERENCE_ROLE");
     if (!value || !*value) {
@@ -52,8 +54,13 @@ static bool bv_is_allowed_request(bv_inference_role role, const httplib::Request
         req.get_header_value("Content-Type").find("application/json") != 0) {
         return false;
     }
-    const json body = json::parse(req.body, nullptr, false);
-    if (body.is_discarded() || !body.is_object()) {
+    json body;
+    try {
+        body = json::parse(req.body);
+    } catch (const std::exception &) {
+        return false;
+    }
+    if (!body.is_object()) {
         return false;
     }
     if (role == bv_inference_role::embedding) {
@@ -353,6 +360,7 @@ bool server_http_context::init(const common_params & params) {
 }
 
 bool server_http_context::init_listener(const common_params & params) {
+    const bv_inference_role bv_role = bv_role_from_env();
     auto & srv = pimpl->servers.back();
 
 #ifdef CPPHTTPLIB_OPENSSL_SUPPORT
