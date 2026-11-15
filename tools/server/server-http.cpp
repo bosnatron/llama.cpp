@@ -305,8 +305,15 @@ bool server_http_context::init(const common_params & params) {
         if (params.ui || params.ui_mcp_proxy || params.server_connect ||
             !params.server_tools.empty() || !params.server_tools_runtime.empty() ||
             !params.mcp_servers_config.empty() || !params.mcp_servers_json.empty() ||
-            !params.api_prefix.empty()) {
-            SRV_ERR("%s", "BV inference mode forbids UI, tools, MCP, routing and API prefixes.\n");
+            !params.api_prefix.empty() || !params.public_path.empty() ||
+            !params.models_dir.empty() || !params.server_base.empty() ||
+            !params.media_path.empty() || !params.slot_save_path.empty() ||
+            !params.path_prompts_log_dir.empty() || params.reuse_port ||
+            !params.offline || params.cache_prompt || params.cache_idle_slots ||
+            params.cache_ram_mib != 0 || params.slot_prompt_similarity > 0 ||
+            (bv_role == bv_inference_role::chat && params.embedding) ||
+            (bv_role == bv_inference_role::embedding && !params.embedding)) {
+            SRV_ERR("%s", "BV inference mode requires offline, uncached, text-only or embedding-only operation; UI, tools and file access are forbidden.\n");
             return false;
         }
         for (const auto & host : params.hostnames) {
