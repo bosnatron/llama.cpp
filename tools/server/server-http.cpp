@@ -8,6 +8,8 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
+#include <cstring>
 #include <cstdio>
 #include <functional>
 #include <future>
@@ -15,6 +17,82 @@
 #include <string>
 #include <thread>
 #include <mutex>
+
+// Bright Vale inference-only mode is explicitly opt-in. No model weights,
+// database records, or user identity are embedded here. Perl owns authorization.
+enum class bv_inference_role { off, chat, embedding, invalid };
+
+static bv_inference_role bv_role_from_env() {
+    const char * value = std::getenv("BV_INFERENCE_ROLE");
+    if (!value || !*value) {
+        return bv_inference_role::off;
+    }
+    if (std::strcmp(value, "chat") == 0) {
+        return bv_inference_role::chat;
+    }
+    if (std::strcmp(value, "embedding") == 0) {
+        return bv_inference_role::embedding;
+    }
+    return bv_inference_role::invalid;
+}
+
+static bool bv_is_allowed_request(bv_inference_role role, const httplib::Request & req) {
+    if (!addr_is_loopback(req.remote_addr) ||
+        !addr_is_loopback(req.local_addr) ||
+        !req.get_header_value("Origin").empty() ||
+        !req.get_header_value("Sec-Fetch-Site").empty()) {
+        return false; // Neither network peers nor browsers may call the model.
+    }
+    if (req.method == "GET") {
+        return req.path == "/health" || req.path == "/v1/health" ||
+            (role == bv_inference_role::chat && req.path == "/props") ||
+            (role == bv_inference_role::embedding && req.path == "/v1/models");
+    }
+    if (req.method != "POST" || req.body.size() > 1048576 ||
+        req.get_header_value("Content-Type").find("application/json") != 0) {
+        return false;
+    }
+    const json body = json::parse(req.body, nullptr, false);
+    if (body.is_discarded() || !body.is_object()) {
+        return false;
+    }
+    if (role == bv_inference_role::embedding) {
+        return req.path == "/v1/embeddings" && body.contains("input") &&
+            (body["input"].is_string() || body["input"].is_array()) &&
+            !body.contains("tools") && !body.contains("messages");
+    }
+    if (role != bv_inference_role::chat || req.path != "/v1/chat/completions" ||
+        !body.contains("messages") || !body["messages"].is_array() ||
+        body["messages"].empty() || body["messages"].size() > 100 ||
+        !body.contains("cache_prompt") || body["cache_prompt"] != false) {
+        return false;
+    }
+    // The server may generate text but cannot invoke a function, tool, MCP
+    // server or any other action channel on BV's behalf.
+    for (const char * forbidden : {
+        "tools", "tool_choice", "functions", "function_call",
+        "parallel_tool_calls", "mcp_servers", "input"
+    }) {
+        if (body.contains(forbidden)) {
+            return false;
+        }
+    }
+    if (body.contains("stream") && body["stream"] != false) {
+        return false; // Only complete responses pass the Perl output gate.
+    }
+    for (const auto & message : body["messages"]) {
+        if (!message.is_object() || !message.contains("role") ||
+            !message["role"].is_string() || !message.contains("content") ||
+            !message["content"].is_string() ||
+            (message["role"] != "system" && message["role"] != "user" &&
+             message["role"] != "assistant") ||
+            message.contains("tool_calls") || message.contains("function_call") ||
+            message.contains("tool_call_id")) {
+            return false;
+        }
+    }
+    return true;
+}
 
 //
 // HTTP implementation using cpp-httplib
@@ -206,6 +284,28 @@ struct gcp_params {
 };
 
 bool server_http_context::init(const common_params & params) {
+    const bv_inference_role bv_role = bv_role_from_env();
+    if (bv_role == bv_inference_role::invalid) {
+        SRV_ERR("%s", "Invalid BV_INFERENCE_ROLE. Use chat or embedding.\n");
+        return false;
+    }
+    if (bv_role != bv_inference_role::off) {
+        // An inference-only server may never enable UI, browser proxy,
+        // file/command tools, MCP, dynamic routing or remote listening.
+        if (params.ui || params.ui_mcp_proxy || params.server_connect ||
+            !params.server_tools.empty() || !params.server_tools_runtime.empty() ||
+            !params.mcp_servers_config.empty() || !params.mcp_servers_json.empty() ||
+            !params.api_prefix.empty()) {
+            SRV_ERR("%s", "BV inference mode forbids UI, tools, MCP, routing and API prefixes.\n");
+            return false;
+        }
+        for (const auto & host : params.hostnames) {
+            if (host != "127.0.0.1" && host != "::1" && host != "localhost") {
+                SRV_ERR("%s", "BV inference mode requires loopback-only listeners.\n");
+                return false;
+            }
+        }
+    }
     const gcp_params gcp;
 
     path_prefix = params.api_prefix;
@@ -425,7 +525,30 @@ bool server_http_context::init_listener(const common_params & params) {
     };
 
     // register server middlewares
-    srv->set_pre_routing_handler([&params, middleware_validate_api_key, middleware_server_state](const httplib::Request & req, httplib::Response & res) {
+    srv->set_pre_routing_handler([&params, middleware_validate_api_key, middleware_server_state, bv_role](const httplib::Request & req, httplib::Response & res) {
+        if (bv_role != bv_inference_role::off) {
+            res.set_header("Cache-Control", "no-store");
+            res.set_header("Pragma", "no-cache");
+            if (!bv_is_allowed_request(bv_role, req)) {
+                res.status = 403;
+                res.set_content(
+                    safe_json_to_str(json {
+                        {"error", {
+                            {"message", "BV inference-only endpoint denied"},
+                            {"type", "permission_error"},
+                            {"code", 403}
+                        }}
+                    }),
+                    "application/json; charset=utf-8"
+                );
+                return httplib::Server::HandlerResponse::Handled;
+            }
+            if (!middleware_server_state(req, res) ||
+                !middleware_validate_api_key(req, res)) {
+                return httplib::Server::HandlerResponse::Handled;
+            }
+            return httplib::Server::HandlerResponse::Unhandled;
+        }
         if (params.cors_credentials && params.cors_origins == "*") {
             // special case: echo back the Origin header to allow any origin to access the server with credentials
             res.set_header("Access-Control-Allow-Origin", req.get_header_value("Origin"));
