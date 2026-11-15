@@ -23,6 +23,7 @@
 enum class bv_inference_role { off, chat, embedding, invalid };
 
 static bool addr_is_loopback(const std::string & addr);
+static std::string host_name(const std::string & host);
 
 static bv_inference_role bv_role_from_env() {
     const char * value = std::getenv("BV_INFERENCE_ROLE");
@@ -39,8 +40,10 @@ static bv_inference_role bv_role_from_env() {
 }
 
 static bool bv_is_allowed_request(bv_inference_role role, const httplib::Request & req) {
+    const auto host = host_name(req.get_header_value("Host"));
     if (!addr_is_loopback(req.remote_addr) ||
         !addr_is_loopback(req.local_addr) ||
+        !(host == "localhost" || addr_is_loopback(host)) ||
         !req.get_header_value("Origin").empty() ||
         !req.get_header_value("Sec-Fetch-Site").empty()) {
         return false; // Neither network peers nor browsers may call the model.
