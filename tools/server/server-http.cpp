@@ -545,6 +545,10 @@ bool server_http_context::init_listener(const common_params & params) {
     // register server middlewares
     srv->set_pre_routing_handler([&params, middleware_validate_api_key, middleware_server_state, bv_role](const httplib::Request & req, httplib::Response & res) {
         if (bv_role != bv_inference_role::off) {
+            // Windows bootstrap verifies this marker before trusting an
+            // executable. Upstream binaries ignore BV_INFERENCE_ROLE entirely.
+            res.set_header("X-BV-Inference-Role",
+                bv_role == bv_inference_role::chat ? "chat" : "embedding");
             res.set_header("Cache-Control", "no-store");
             res.set_header("Pragma", "no-cache");
             if (!bv_is_allowed_request(bv_role, req)) {
