@@ -165,9 +165,28 @@ def exercise(binary, model, role, directory):
                 ):
                     require_status(http(port, "/v1/chat/completions", "POST", body)[0],
                                    403, f"chat denies {title}")
-                status, body, _ = http(port, "/v1/chat/completions", "POST", chat)
+                status, response, response_headers = http(
+                    port, "/v1/chat/completions", "POST", chat
+                )
+                if status != 200:
+                    # Synthetic prompt only; expose the actual HTTP rejection
+                    # rather than assuming generation or security is at fault.
+                    error_text = response.decode("utf-8", errors="replace")[:800]
+                    log_tail = logfile.read_text(errors="replace")[-1200:]
+                    raise AssertionError(
+                        f"chat permits bounded text completion: expected HTTP 200, "
+                        f"received {status}; response={error_text!r}; "
+                        f"server-log-tail={log_tail!r}"
+                    )
                 require_status(status, 200, "chat permits bounded text completion")
-                if not isinstance(json.loads(body).get("choices"), list):
+                profile = next(
+                    (value for key, value in response_headers.items()
+                     if key.lower() == "x-bv-chat-profile"), None
+                )
+                if profile != "professional-v1":
+                    raise AssertionError("Accepted chat was not tagged with the BV professional behavior profile")
+                print("PASS: chat professional behavior profile applied (header attestation)", flush=True)
+                if not isinstance(json.loads(response).get("choices"), list):
                     raise AssertionError("Accepted chat response missing choices")
             else:
                 require_status(http(port, "/props")[0], 403, "embedding denies chat diagnostics")
