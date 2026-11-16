@@ -2,6 +2,7 @@
 #include "http.h"
 #include "server-http.h"
 #include "server-common.h"
+#include "bv-chat-behavior.h"
 #include "ui.h"
 
 #include <cpp-httplib/httplib.h>
@@ -102,6 +103,37 @@ static bool bv_is_allowed_request(bv_inference_role role, const httplib::Request
         }
     }
     return true;
+}
+
+// Add a mandatory professional style system message to BV's opt-in chat role.
+// This does not perform fact-checking and never affects embedding or upstream
+// server modes. The per-request gate validates the caller before this runs.
+static bool bv_apply_chat_behavior(std::string & body) {
+    try {
+        json request = json::parse(body);
+        if (!request.is_object() || !request.contains("messages") ||
+            !request["messages"].is_array() || request["messages"].empty()) {
+            return false;
+        }
+        json & messages = request["messages"];
+        auto position = messages.begin();
+        while (position != messages.end() && position->is_object() &&
+               position->value("role", std::string()) == "system") {
+            ++position;
+        }
+        messages.insert(position, json{
+            {"role", "system"},
+            {"content", BV_CHAT_BEHAVIOR_PROFILE_TEXT}
+        });
+        std::string encoded = request.dump();
+        if (encoded.size() > 1048576) {
+            return false; // keep the existing BV request-size limit after insertion
+        }
+        body = std::move(encoded);
+        return true;
+    } catch (const std::exception &) {
+        return false;
+    }
 }
 
 //
@@ -954,7 +986,7 @@ void server_http_context::get(const std::string & path, const server_http_contex
 
 void server_http_context::post(const std::string & path, const server_http_context::handler_t & handler) const {
     handlers.emplace(path, handler);
-    auto callback = [handler](const httplib::Request & req, httplib::Response & res) {
+    auto callback = [handler, path](const httplib::Request & req, httplib::Response & res) {
         std::string body = req.body;
         std::map<std::string, uploaded_file> files;
 
@@ -983,6 +1015,16 @@ void server_http_context::post(const std::string & path, const server_http_conte
                     file.content_type,
                 };
             }
+        }
+
+        if (path == "/v1/chat/completions" &&
+            bv_role_from_env() == bv_inference_role::chat) {
+            if (!bv_apply_chat_behavior(body)) {
+                res.status = 403;
+                res.set_content("BV chat request rejected", "text/plain; charset=utf-8");
+                return;
+            }
+            res.set_header("X-BV-Chat-Profile", BV_CHAT_BEHAVIOR_PROFILE_NAME);
         }
 
         server_http_req_ptr request = std::make_unique<server_http_req>(server_http_req{
