@@ -162,6 +162,13 @@ def exercise(binary, model, role, directory):
                     ("tool-message", {**chat, "messages": [
                         {"role": "user", "content": "x", "tool_calls": []}
                     ]}),
+                    # Verify that validation after the POST body is read still
+                    # rejects malformed structures before model inference.
+                    ("non-object-body", []),
+                    ("missing-messages", {**chat, "messages": []}),
+                    ("non-string-message", {**chat, "messages": [
+                        {"role": "user", "content": {"text": "x"}}
+                    ]}),
                 ):
                     require_status(http(port, "/v1/chat/completions", "POST", body)[0],
                                    403, f"chat denies {title}")
@@ -198,6 +205,15 @@ def exercise(binary, model, role, directory):
                          {"input": "synthetic", "tools": []})[0],
                     403, "embedding denies tool declarations"
                 )
+                for title, body in (
+                    ("non-object-body", []),
+                    ("missing-input", {}),
+                    ("non-string-input", {"input": {"text": "x"}}),
+                ):
+                    require_status(
+                        http(port, "/v1/embeddings", "POST", body)[0],
+                        403, f"embedding denies {title}"
+                    )
                 status, body, _ = http(port, "/v1/embeddings", "POST",
                                        {"input": "search_document: a synthetic experiment"})
                 require_status(status, 200, "embedding permits its single inference endpoint")
