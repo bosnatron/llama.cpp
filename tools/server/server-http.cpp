@@ -124,15 +124,30 @@ static bool bv_apply_chat_behavior(std::string & body) {
             return false;
         }
         json & messages = request["messages"];
-        auto position = messages.begin();
-        while (position != messages.end() && position->is_object() &&
-               position->value("role", std::string()) == "system") {
-            ++position;
+        // common_json has no iterator-> or position-based insert. Preserve
+        // leading system messages and the original message order explicitly.
+        json reordered = json::array();
+        bool inserted = false;
+        for (size_t i = 0; i < messages.size(); ++i) {
+            const json & message = messages[i];
+            if (!inserted &&
+                !(message.is_object() &&
+                  message.value("role", std::string()) == "system")) {
+                reordered.push_back(json{
+                    {"role", "system"},
+                    {"content", BV_CHAT_BEHAVIOR_PROFILE_TEXT}
+                });
+                inserted = true;
+            }
+            reordered.push_back(message);
         }
-        messages.insert(position, json{
-            {"role", "system"},
-            {"content", BV_CHAT_BEHAVIOR_PROFILE_TEXT}
-        });
+        if (!inserted) {
+            reordered.push_back(json{
+                {"role", "system"},
+                {"content", BV_CHAT_BEHAVIOR_PROFILE_TEXT}
+            });
+        }
+        messages = std::move(reordered);
         std::string encoded = request.dump();
         if (encoded.size() > 1048576) {
             return false; // keep the existing BV request-size limit after insertion
