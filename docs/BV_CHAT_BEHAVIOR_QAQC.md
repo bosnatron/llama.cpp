@@ -105,6 +105,13 @@ Enforce `professional-v1` **only** for opt-in `BV_INFERENCE_ROLE=chat`. It instr
 - **Privacy rerun verified PASS:** [run `44036595760`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44036595760) at `989ab8d` completed SUCCESS after the scoped workflow fix. [Windows/Linux pinned smoke `44036595737`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44036595737) was still IN PROGRESS on inspection. Corrected-fork HTTP 200/403 acceptance remains NOT VERIFIED.
 - **Next:** review both OS logs plus privacy job and update precise PASS/FAIL statuses. Do not infer working production Qwen/Nomic models from synthetic GGUF smoke.
 
+### 2026-11-17 — common_json compilation correction and runtime verification
+
+- **Real failed Windows/Linux build retained:** [run 44035855164](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44035855164) compiled pinned fork revision `b36001d` but failed in `bv_apply_chat_behavior` due to unsupported `common_json::iterator->` and `insert(position,json)` methods. HTTP smoke steps did not execute, so authorized-chat HTTP 200 and denied HTTP 403 are not proven.
+- **Compatibility fix:** [fork commit `572168d`](https://github.com/bosnatron/llama.cpp/commit/572168d73589e7cc5278146031c7284561579858) uses supported `common_json` array/push-back operations, preserves leading system messages and ordering, and applies `professional-v1` before other roles. Authorization, cache, tool and browser restrictions unchanged.
+- **New pinned Windows/Linux smoke run:** [Windows workflow `37f0f20`](https://github.com/bosnatron/BV_Microsoft_Test/commit/37f0f20598a8774c00e3a06e9550ce1239407dff), [run 44037390691](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44037390691), initially QUEUED. Do not claim compilation or runtime PASS until both job logs are examined. Existing failure remains visible.
+- **Next:** check both native builds and all allowed/forbidden HTTP results, then update exact test status; final real Qwen/Nomic models and packaged Windows product remain out of scope for this check.
+
 ## QA/QC required before acceptance
 
 1. Obtain a fresh Actions run on the new revision and confirm **both** Windows and Linux compilation, valid-chat HTTP 200, profile attestation, and security refusal checks. If HTTP 403 recurs, inspect the diagnostic response and fix its cause **without relaxing loopback, non-tool, no-browser, no-cache or role restrictions**.
