@@ -41,6 +41,12 @@ Enforce `professional-v1` **only** for opt-in `BV_INFERENCE_ROLE=chat`. It instr
 - **Next:** run `.github/workflows/bv-inference-build.yml` on `master` at `b1f2495`, check Windows and Linux valid-chat/embedding and negative/security assertions, preserve any failures, then calibrate with pinned Qwen and verify Windows Perl integration. Do not relax security gates or claim installer acceptance.
 - **Original Bright_Vale repository untouched.**
 
+### 2026-11-17 — POST-body negative regression coverage
+
+- **Added six smoke-test cases** to `tools/server/tests/bv_inference_smoke.py` in [commit `b36001d`](https://github.com/bosnatron/llama.cpp/commit/b36001dcbf3f95a8f9b50ed6c8248a6a35a16e32): chat role rejects JSON array, empty messages and object-valued message content; embedding role rejects JSON array, missing input and object-valued input. These supplement existing tool/browser/cache/stream denial tests and successful authorized chat/embedding cases. The workflow already includes this file in its push path filters.
+- **Evidence state:** source change committed and test cases inspected; **no Windows/Linux execution result verified yet** for this test revision. A GitHub commit/status query returned no reported statuses, which alone does not establish that Actions ran or failed. Do not mark the repaired positive-chat HTTP 403 or negative tests PASS without job logs.
+- **Next:** collect the Windows/Linux `bv-inference-build.yml` run for commit `b36001d` (or dispatch the workflow manually if no run appears); inspect authorized HTTP 200 and denied HTTP 403 outcomes and profile attestation. Preserve failures and only then revise acceptance.
+
 ## QA/QC required before acceptance
 
 1. Obtain a fresh Actions run on the new revision and confirm **both** Windows and Linux compilation, valid-chat HTTP 200, profile attestation, and security refusal checks. If HTTP 403 recurs, inspect the diagnostic response and fix its cause **without relaxing loopback, non-tool, no-browser, no-cache or role restrictions**.
