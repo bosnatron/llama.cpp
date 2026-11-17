@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import socket
+import struct
 import subprocess
 import sys
 import tempfile
@@ -43,6 +44,35 @@ def test_model(directory):
     if digest != MODEL_SHA256:
         raise RuntimeError("Test GGUF checksum mismatch; refusing to run.")
     return path
+
+
+
+def expanded_context_smoke_fixture(model, directory):
+    """Derive a disposable large-context *transport test* from the pinned GGUF.
+
+    The tiny upstream test model declares 128 trained tokens, whereas the
+    mandatory professional-v1 system instruction requires ~886 tokens. This
+    fixture changes only a known GGUF metadata integer, never model weights.
+    It is NOT evidence of long-context model accuracy, training, or quality.
+    The original download must already have passed its pinned SHA-256 check.
+    """
+    data = model.read_bytes()
+    name = b"llama.context_length"
+    matches = []
+    for kind, fmt in ((4, "<I"), (10, "<Q")):
+        old = struct.pack("<Q", len(name)) + name + struct.pack("<I", kind) + struct.pack(fmt, 128)
+        if data.count(old) == 1:
+            matches.append((old, struct.pack("<Q", len(name)) + name +
+                            struct.pack("<I", kind) + struct.pack(fmt, 2048)))
+    if len(matches) != 1:
+        raise RuntimeError("Pinned tiny GGUF context metadata is not the expected 128 tokens")
+    before, after = matches[0]
+    generated = data.replace(before, after, 1)
+    derived = Path(directory) / "stories260K-smoke-context2048.gguf"
+    derived.write_bytes(generated)
+    print("Synthetic transport fixture: changed GGUF context metadata only; "
+          "output quality not tested.", flush=True)
+    return derived
 
 
 def available_port():
@@ -102,7 +132,7 @@ def exercise(binary, model, role, directory):
         "--no-ui", "--offline", "--cors-origins", "localhost",
         "--no-slots", "--no-cache-prompt", "--no-cache-idle-slots",
         "--cache-ram", "0", "--slot-prompt-similarity", "0",
-        "--parallel", "1", "--ctx-size", "512", "--batch-size", "32",
+        "--parallel", "1", "--ctx-size", "2048", "--batch-size", "32",
     ]
     if role == "embedding":
         flags.extend(["--embedding", "--pooling", "mean"])
@@ -237,7 +267,7 @@ def main():
     if not binary.is_file():
         raise SystemExit(f"Missing inference binary: {binary}")
     with tempfile.TemporaryDirectory(prefix="bv-smoke-") as directory:
-        model = test_model(directory)
+        model = expanded_context_smoke_fixture(test_model(directory), directory)
         for role in ("chat", "embedding"):
             exercise(binary, model, role, directory)
 
