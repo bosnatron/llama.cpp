@@ -1,9 +1,15 @@
 # BV chat behavior — verification checkpoint
 
-**Date:** 2026-11-16  
+**Date:** 2026-11-17  
 **Branch:** `master`  
 **Scope:** Forked `llama-server` chat role used by the Windows test edition; not the original Bright Vale repository.  
-**Disposition:** **SOURCE WIRED / STATIC CHECK PASS; WINDOWS AND LINUX RUNTIME NOT VERIFIED.**
+**Disposition (current):** **PASS for bounded native Windows/Linux inference HTTP smoke at pinned fork `72b5770` (synthetic GGUF)**; actual Qwen/Nomic model integration and complete Windows product **NOT VERIFIED**. Earlier dated entries below retain their original historical statuses.
+
+## 2026-11-17 — consolidated accepted PASS index before the next 10% batch
+
+**Accepted scoped PASS evidence, not full-model certification:** native `llama-server` built and ran the restricted-role **real HTTP smoke** successfully on **Windows and Linux** from exact fork SHA `72b5770c42dfe805a6fefb161e57e07bdeeca6e6`. [Actions run 44038802829](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44038802829) **SUCCESS**; Windows job `133888076995`, Linux job `133888076654` **SUCCESS**. Both job logs separately showed chat allowed **200**, embedding allowed **200**, forbidden tools/browser/caching/streaming/Host/Origin/malformed cases **403**, `professional-v1` response-header attestation, and completion of both role suites. [Privacy run 44038802836](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44038802836) **PASS**. Windows launcher synthetic readiness tests [run 44035372557](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44035372557) **12/12 PASS** (mocked HTTP, separate test scope).
+
+**Limits:** the inference HTTP test uses a checksum-verified tiny synthetic GGUF and a disposable context-length metadata override (128 → 2048) to fit the mandatory professional profile. No production Qwen3-4B or Nomic GGUF behavior, answer quality, factual calibration, real three-service startup, installer, full DLL closure, threading or licensing are certified. Earlier failed runs `43734669788` (legitimate HTTP 403), `44035855164` (C++ `common_json` compile), and `44037390691` (tiny fixture context-size HTTP 400) remain historical evidence. Final Windows release remains **0/5 approved gates**.
 
 ## Behavior objective
 
@@ -132,4 +138,4 @@ Enforce `professional-v1` **only** for opt-in `BV_INFERENCE_ROLE=chat`. It instr
 2. Test the actual pinned Windows Qwen GGUF with independent, topic-neutral scenarios spanning entity mix-ups, uncertain factual quantities, false versus valid corrections, and general rules versus exceptions. Separate **prompt adherence** from **factual correctness**, log counterexamples, and reserve unseen holdout scenarios.
 3. Run the final Perl fact/evidence gate, actual Windows launcher, local inference role separation and privacy regression tests. A passing synthetic smoke test alone is not product acceptance.
 
-**Current result:** static integration **PASS**; forked server runtime **NOT VERIFIED**; earlier valid-chat **FAIL** open; Qwen calibration effectiveness **NOT TESTED**. No Windows installer, native DLL release or application acceptance is claimed.
+**Current result (2026-11-17):** corrected fork native **Windows/Linux HTTP smoke PASS** on synthetic GGUF (run `44038802829`), including authorized 200, denied 403 and profile attestation; original pre-fix HTTP 403 remains a historical failure now superseded **for this narrowly tested configuration**. Actual Qwen calibration, native DLL/thread/license closure, integrated Windows application and installer **NOT VERIFIED**.
