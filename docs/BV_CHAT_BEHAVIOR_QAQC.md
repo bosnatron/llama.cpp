@@ -89,7 +89,7 @@ Enforce `professional-v1` **only** for opt-in `BV_INFERENCE_ROLE=chat`. It instr
 ### 2026-11-17 — Windows launcher validates inference content, not merely array presence
 
 - **Windows launcher integration change:** [`BV_Microsoft_Test` commit `d9ce896`](https://github.com/bosnatron/BV_Microsoft_Test/commit/d9ce89620fc5c68c3f21aaab324f7970da650bba) rejects Qwen chat responses lacking a populated assistant text choice and Nomic embedding responses with null, nonnumeric or nonfinite elements. [Test commit `75051c4`](https://github.com/bosnatron/BV_Microsoft_Test/commit/75051c4e28218a59f862278e931ec2273c2f6c76) adds four synthetic negative cases, bringing the Windows probe fixture to 12 defined cases.
-- **Execution evidence pending:** [Windows foundation run `44035372557`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44035372557) was in progress on inspection; do not claim the expanded fixture passed. Existing 8/8 synthetic run `44034611129` remains separate, accepted evidence. The fork's C++ HTTP 403 fix still lacks a verified Windows/Linux runtime run.
+- **Execution evidence VERIFIED for the Windows launcher fixture:** [foundation run `44035372557`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44035372557) at `75051c4` completed SUCCESS, with Windows job `133876879136` logs showing **12/12 synthetic cases PASS**. Linux foundation job also passed. This does **not** verify the fork's C++ HTTP 403 correction or actual model inference.
 - **Next:** inspect 12-case Windows job result, then run corrected fork inference HTTP smoke and final model-backed startup verification. No fork source change in this task.
 
 ## QA/QC required before acceptance
