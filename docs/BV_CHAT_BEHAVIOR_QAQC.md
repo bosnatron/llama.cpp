@@ -60,6 +60,13 @@ Enforce `professional-v1` **only** for opt-in `BV_INFERENCE_ROLE=chat`. It instr
 - **CI history remains unchanged at last check:** no verified corrected-code Windows/Linux Actions jobs. Historical [failed run 43734669788](https://github.com/bosnatron/llama.cpp/actions/runs/43734669788) remains retained. No API-triggered workflow dispatch was available through the connected action interface.
 - **Next acceptance gate:** run the existing `BV inference-only fork build` on `master`; review both OS job logs, accepted chat/embedding HTTP 200 and hostile HTTP 403 outcomes, and professional-v1 response attestation. Keep any unresolved behavior explicit and record exact run SHA before claiming PASS.
 
+### 2026-11-17 — Workflow trigger eligibility and absent-run inspection
+
+- **Read-only trigger investigation:** inspected `.github/workflows/bv-inference-build.yml` on fork `master` (blob `ae7a997dc5832b1f9bf280725c62ad2a25056cef`). It declares `push` to `master`, restricted to `tools/server/server-http.cpp`, `tools/server/tests/bv_inference_smoke.py`, and its own workflow file; `workflow_dispatch` is also declared. Thus both the C++ correction `b1f2495` and regression-test change `b36001d` match the path filters on their face.
+- **Observed GitHub Actions history:** repository run-list response reports 168 existing runs, newest created 2026-11-15 20:53:39 UTC; newest `BV inference-only fork build` remains [43734669788](https://github.com/bosnatron/llama.cpp/actions/runs/43734669788) at pre-fix `9c6f4ad`, **FAIL** on the legitimate chat request for both OSes. No corrected-code workflow execution was discovered. This is evidence of a missing trigger/run, **not proof of why** the event was suppressed. Workflow enablement and trigger credentials cannot be established through available connector actions.
+- **Disposition:** source-eligibility inspection **PASS**, actual Windows/Linux CI **NOT RUN / NOT VERIFIED**. Do not create extraneous source changes to force a build, retry the historical pre-fix SHA as though it tested the repair, or weaken any role restrictions.
+- **Next:** use GitHub Actions **Run workflow** on `master` via a workflow-dispatch-capable interface; inspect both matrix jobs and their precise head SHA; record accepted chat/embedding HTTP 200 and forbidden requests HTTP 403, or any remaining failure with logs.
+
 ## QA/QC required before acceptance
 
 1. Obtain a fresh Actions run on the new revision and confirm **both** Windows and Linux compilation, valid-chat HTTP 200, profile attestation, and security refusal checks. If HTTP 403 recurs, inspect the diagnostic response and fix its cause **without relaxing loopback, non-tool, no-browser, no-cache or role restrictions**.
