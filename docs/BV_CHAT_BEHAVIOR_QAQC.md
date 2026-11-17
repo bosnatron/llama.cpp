@@ -5,6 +5,11 @@
 **Scope:** Forked `llama-server` chat role used by the Windows test edition; not the original Bright Vale repository.  
 **Disposition (current):** **PASS for bounded native Windows/Linux inference HTTP smoke at pinned fork `72b5770` (synthetic GGUF)**; actual Qwen/Nomic model integration and complete Windows product **NOT VERIFIED**. Earlier dated entries below retain their original historical statuses.
 
+### 2026-11-17 — candidate GGUF source and hash evidence without shipping approval
+
+- **Reviewed external candidates recorded:** [Windows model-provenance note](https://github.com/bosnatron/BV_Microsoft_Test/blob/main/docs/WINDOWS_GGUF_SOURCE_CANDIDATES_2026-11-17.md) identifies exact revision, reported size and SHA-256 for the Unsloth Qwen3-4B-Instruct-2507 Q4_K_M GGUF and upstream Nomic Embed v1.5 Q8_0 GGUF, with Hugging Face primary and secondary evidence links. Committed [`7505fd3`](https://github.com/bosnatron/BV_Microsoft_Test/commit/7505fd3db819104b500d5678f8ba295621ec08d8) and updated [`e665977`](https://github.com/bosnatron/BV_Microsoft_Test/commit/e66597782e9aa29cfe11e373947db871dd58d5cb).
+- **Trust boundary preserved:** no GGUF weight downloads, independently calculated installed SHA-256, Qwen/Nomic production inference, license notice packaging or redistribution approval occurred. Windows model-source lock still has null source/hash values; actual startup stays fail-closed. The separate synthetic GGUF HTTP role-security PASS remains valid **only for its existing bounded scope**. Zero of five product release gates approved.
+
 ### 2026-11-17 — native candidate missing-DLL diagnosis and fresh Actions execution blocker
 
 - **Actual Windows relocated-server blocker:** [Windows run `44045749146`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44045749146), job `133910928822` built the pinned fork binary and created/verified the 8-image nonrelease candidate, but staged `llama-server.exe --version` exited `-1073741515` (`0xC0000135 STATUS_DLL_NOT_FOUND`). Missing exact DLL name is not yet determined; this is NOT a production-ready offline/relocatable inference package. It does not invalidate separate earlier [synthetic HTTP role smoke `44038802829`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44038802829) on normal CI build directories.
