@@ -98,6 +98,13 @@ Enforce `professional-v1` **only** for opt-in `BV_INFERENCE_ROLE=chat`. It instr
 - **Run created, execution evidence pending:** [run `44035855164`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44035855164) was **QUEUED** when inspected. No successful build, positive HTTP 200, denied HTTP 403, profile attestation or embedding result yet claimed. Preserve earlier fork CI run `43734669788` as failed historical evidence.
 - **Next:** inspect both jobs for exact pinned checkout SHA, compilations, positive/negative request outcomes, and Qwen professional profile attestation; record any failure. This synthetic model smoke does not verify model quality, final Windows package or licensing. No fork server source modification in this step.
 
+### 2026-11-17 — pinned inference workflow privacy follow-up
+
+- **Cross-repository workflow privacy failure recorded:** [Windows source privacy run `44035854992`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44035854992) on `9fa48be` FAILED the `owner-machine-name` scanner category due to an explicit repository owner in the pinned fork CI workflow. Its companion [cross-platform smoke run `44035855164`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44035855164) was still compiling at inspection, not yet a verified 403 fix.
+- **Correction:** [`BV_Microsoft_Test` `989ab8d`](https://github.com/bosnatron/BV_Microsoft_Test/commit/989ab8dfd26e531e94fcad6ffb23f110c597c473) changes only the workflow checkout repository selector to `github.repository_owner`. It retains exact fork pin `b36001d`, existing negative security smoke checks, and permissions. No scanner weakening or fork inference code changes.
+- **Verification pending:** [privacy `44036595760`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44036595760) and [Windows/Linux pinned smoke `44036595737`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44036595737) started after correction but had not completed at last check. Actual corrected-fork HTTP 200/403 acceptance remains NOT VERIFIED.
+- **Next:** review both OS logs plus privacy job and update precise PASS/FAIL statuses. Do not infer working production Qwen/Nomic models from synthetic GGUF smoke.
+
 ## QA/QC required before acceptance
 
 1. Obtain a fresh Actions run on the new revision and confirm **both** Windows and Linux compilation, valid-chat HTTP 200, profile attestation, and security refusal checks. If HTTP 403 recurs, inspect the diagnostic response and fix its cause **without relaxing loopback, non-tool, no-browser, no-cache or role restrictions**.
