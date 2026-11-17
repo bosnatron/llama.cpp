@@ -53,6 +53,13 @@ Enforce `professional-v1` **only** for opt-in `BV_INFERENCE_ROLE=chat`. It instr
 - **Acceptance:** corrected-source Windows build, Linux build, positive chat HTTP 200, embedding HTTP 200, all negative HTTP 403, and professional-v1 attestation remain **NOT TESTED / NOT VERIFIED**. No deployment or workaround was performed.
 - **Blocker and next action:** no workflow-dispatch capability is exposed by the present GitHub connection; manually select **Actions → BV inference-only fork build → Run workflow → master** in the fork, then inspect both jobs and preserve log evidence before updating this record. Do not relax authorization or mark PASS without a linked run. The original `Bright_Vale` is untouched.
 
+## 2026-11-17 — Source contract re-inspection after HTTP 403 repair
+
+- **Inspection only, no server execution or source change.** Read the latest `tools/server/server-http.cpp`, `tools/server/tests/bv_inference_smoke.py`, and `.github/workflows/bv-inference-build.yml` from `master`; confirmed corrected request-stage handling and smoke coverage.
+- **15/15 bounded source-contract assertions PASS:** early routing without JSON parsing; pre-routing gate explicitly early-only; post-handler JSON authorization; authorization before inference; strict loopback/Host checks; browser request denial; 1 MiB body bound; JSON/cache restriction; forbidden tools/functions/MCP; limited message roles; no streaming; professional instruction insertion only after authorization; opt-in behavior preserving unmodified upstream mode; negative chat/embedding body tests; positive chat/embedding test cases retained. This was an inspection of source text and control flow, **not a compiler test, HTTP execution, security penetration test, or model-quality acceptance**.
+- **CI history remains unchanged at last check:** no verified corrected-code Windows/Linux Actions jobs. Historical [failed run 43734669788](https://github.com/bosnatron/llama.cpp/actions/runs/43734669788) remains retained. No API-triggered workflow dispatch was available through the connected action interface.
+- **Next acceptance gate:** run the existing `BV inference-only fork build` on `master`; review both OS job logs, accepted chat/embedding HTTP 200 and hostile HTTP 403 outcomes, and professional-v1 response attestation. Keep any unresolved behavior explicit and record exact run SHA before claiming PASS.
+
 ## QA/QC required before acceptance
 
 1. Obtain a fresh Actions run on the new revision and confirm **both** Windows and Linux compilation, valid-chat HTTP 200, profile attestation, and security refusal checks. If HTTP 403 recurs, inspect the diagnostic response and fix its cause **without relaxing loopback, non-tool, no-browser, no-cache or role restrictions**.
