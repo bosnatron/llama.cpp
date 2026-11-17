@@ -73,6 +73,12 @@ Enforce `professional-v1` **only** for opt-in `BV_INFERENCE_ROLE=chat`. It instr
 - [ ] **Execution pending:** no Windows launcher parsing, actual model inference, or negative cleanup verification has been executed on this new change. It does not establish resolution of the earlier forked server HTTP 403 or final packaging acceptance.
 - **Next:** verify `llama.cpp` corrected Windows/Linux server first, then test these two startup probes with pinned Qwen/Nomic files in an integrated Windows candidate. This is a companion integration note; no fork inference source modified.
 
+### 2026-11-17 — Windows one-click launcher synthetic probe tests
+
+- **Cross-repository test coverage only:** the Windows edition now has `bin_windows/test-launcher-inference-probe.ps1` ([`74a6c91`](https://github.com/bosnatron/BV_Microsoft_Test/commit/74a6c91a39928e41e300be97a80bbe543f4264ea), corrected [`05e48f6`](https://github.com/bosnatron/BV_Microsoft_Test/commit/05e48f65c011397a989750e995139d94c50db598)) for isolated Qwen/Nomic startup probe acceptance and rejection, wired into Windows `foundation-checks.yml` ([`5cb0304`](https://github.com/bosnatron/BV_Microsoft_Test/commit/5cb0304c5b41cf342965f423cd6ebe7ff9405c93)). Uses synthetic HTTP responses, no actual inference/model/service startup.
+- **Evidence status: SOURCE ADDED; TEST EXECUTION NOT VERIFIED.** Eight declared cases check positive chat and embeddings, empty results, wrong role/profile, malformed JSON and network rejection. This does not certify the fork's HTTP 403 correction or Windows installation. No fork server source or model was changed.
+- **Next:** obtain actual Windows foundation job results and fork Windows/Linux inference smoke results; record their commit SHAs and pass/fail logs before acceptance.
+
 ## QA/QC required before acceptance
 
 1. Obtain a fresh Actions run on the new revision and confirm **both** Windows and Linux compilation, valid-chat HTTP 200, profile attestation, and security refusal checks. If HTTP 403 recurs, inspect the diagnostic response and fix its cause **without relaxing loopback, non-tool, no-browser, no-cache or role restrictions**.
