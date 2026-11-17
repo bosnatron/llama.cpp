@@ -92,6 +92,12 @@ Enforce `professional-v1` **only** for opt-in `BV_INFERENCE_ROLE=chat`. It instr
 - **Execution evidence VERIFIED for the Windows launcher fixture:** [foundation run `44035372557`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44035372557) at `75051c4` completed SUCCESS, with Windows job `133876879136` logs showing **12/12 synthetic cases PASS**. Linux foundation job also passed. This does **not** verify the fork's C++ HTTP 403 correction or actual model inference.
 - **Next:** inspect 12-case Windows job result, then run corrected fork inference HTTP smoke and final model-backed startup verification. No fork source change in this task.
 
+### 2026-11-17 — cross-repository pinned fork runtime CI requested
+
+- **Independent Windows-edition verification created:** [`BV_Microsoft_Test` commit `9fa48be`](https://github.com/bosnatron/BV_Microsoft_Test/commit/9fa48bed58f7050a279509d6d3ff71eb72c8af95) adds `.github/workflows/windows-qwen-fork-http-compat.yml`, pinning `bosnatron/llama.cpp` at `b36001dcbf3f95a8f9b50ed6c8248a6a35a16e32` (post 403 correction and six regression cases). Both Windows and Linux CI jobs compile `llama-server` and run the fork's real HTTP smoke test with the existing checksum-pinned synthetic GGUF. A manual workflow dispatch is not required for this new verification route.
+- **Run created, execution evidence pending:** [run `44035855164`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44035855164) was **QUEUED** when inspected. No successful build, positive HTTP 200, denied HTTP 403, profile attestation or embedding result yet claimed. Preserve earlier fork CI run `43734669788` as failed historical evidence.
+- **Next:** inspect both jobs for exact pinned checkout SHA, compilations, positive/negative request outcomes, and Qwen professional profile attestation; record any failure. This synthetic model smoke does not verify model quality, final Windows package or licensing. No fork server source modification in this step.
+
 ## QA/QC required before acceptance
 
 1. Obtain a fresh Actions run on the new revision and confirm **both** Windows and Linux compilation, valid-chat HTTP 200, profile attestation, and security refusal checks. If HTTP 403 recurs, inspect the diagnostic response and fix its cause **without relaxing loopback, non-tool, no-browser, no-cache or role restrictions**.
