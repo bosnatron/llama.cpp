@@ -67,6 +67,12 @@ Enforce `professional-v1` **only** for opt-in `BV_INFERENCE_ROLE=chat`. It instr
 - **Disposition:** source-eligibility inspection **PASS**, actual Windows/Linux CI **NOT RUN / NOT VERIFIED**. Do not create extraneous source changes to force a build, retry the historical pre-fix SHA as though it tested the repair, or weaken any role restrictions.
 - **Next:** use GitHub Actions **Run workflow** on `master` via a workflow-dispatch-capable interface; inspect both matrix jobs and their precise head SHA; record accepted chat/embedding HTTP 200 and forbidden requests HTTP 403, or any remaining failure with logs.
 
+### 2026-11-17 — Windows launcher now requires both real inference roles
+
+- [x] **Cross-repository integration source update:** [`BV_Microsoft_Test` commit `cff2c95`](https://github.com/bosnatron/BV_Microsoft_Test/commit/cff2c9545e312bdca04d91723d12371e48362750) adds synthetic `/v1/embeddings` and `/v1/chat/completions` checks after launcher health/role checks and before enabling the Windows assistant interface. Chat request sets `cache_prompt:false`, `stream:false`, bounded tokens and no tools; both model responses must attest the expected inference role, and Qwen must attest `professional-v1`. Errors refuse startup.
+- [ ] **Execution pending:** no Windows launcher parsing, actual model inference, or negative cleanup verification has been executed on this new change. It does not establish resolution of the earlier forked server HTTP 403 or final packaging acceptance.
+- **Next:** verify `llama.cpp` corrected Windows/Linux server first, then test these two startup probes with pinned Qwen/Nomic files in an integrated Windows candidate. This is a companion integration note; no fork inference source modified.
+
 ## QA/QC required before acceptance
 
 1. Obtain a fresh Actions run on the new revision and confirm **both** Windows and Linux compilation, valid-chat HTTP 200, profile attestation, and security refusal checks. If HTTP 403 recurs, inspect the diagnostic response and fix its cause **without relaxing loopback, non-tool, no-browser, no-cache or role restrictions**.
