@@ -79,6 +79,13 @@ Enforce `professional-v1` **only** for opt-in `BV_INFERENCE_ROLE=chat`. It instr
 - **Evidence status: SOURCE ADDED; TEST EXECUTION NOT VERIFIED.** Eight declared cases check positive chat and embeddings, empty results, wrong role/profile, malformed JSON and network rejection. This does not certify the fork's HTTP 403 correction or Windows installation. No fork server source or model was changed.
 - **Next:** obtain actual Windows foundation job results and fork Windows/Linux inference smoke results; record their commit SHAs and pass/fail logs before acceptance.
 
+### 2026-11-17 — verified Windows launcher synthetic CI
+
+- **Cross-repository Windows evidence:** [`BV_Microsoft_Test` foundation run `44034611129`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44034611129), commit `05e48f6`, **Windows and Linux foundation jobs PASS**; Windows job `133874362197` ran all 8 isolated PowerShell launcher inference-probe scenarios successfully (valid chat/vector, empty response rejection, wrong inference-role/profile rejection, invalid JSON and network failure). Verified using job logs, not merely commit status.
+- **Historical test failure retained:** [run `44034590015`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44034590015) at `5cb0304` failed its Windows probe step after two embedding cases and logged `Local chat inference verification failed on port 8082. Startup refused.`; correction commit `05e48f6` is present in the passing run.
+- **Scope:** mocked inference HTTP responses and launcher syntax checks only. The C++ inference server's allowed-chat 403 correction, actual Qwen/Nomic models and final three-service Windows installation remain **NOT VERIFIED**. No fork model/server source modified in this checkpoint.
+- **Next:** obtain corrected-fork Windows/Linux runtime smoke evidence and then real Windows model startup/inference acceptance.
+
 ## QA/QC required before acceptance
 
 1. Obtain a fresh Actions run on the new revision and confirm **both** Windows and Linux compilation, valid-chat HTTP 200, profile attestation, and security refusal checks. If HTTP 403 recurs, inspect the diagnostic response and fix its cause **without relaxing loopback, non-tool, no-browser, no-cache or role restrictions**.
