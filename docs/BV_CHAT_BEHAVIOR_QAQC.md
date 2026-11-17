@@ -86,6 +86,12 @@ Enforce `professional-v1` **only** for opt-in `BV_INFERENCE_ROLE=chat`. It instr
 - **Scope:** mocked inference HTTP responses and launcher syntax checks only. The C++ inference server's allowed-chat 403 correction, actual Qwen/Nomic models and final three-service Windows installation remain **NOT VERIFIED**. No fork model/server source modified in this checkpoint.
 - **Next:** obtain corrected-fork Windows/Linux runtime smoke evidence and then real Windows model startup/inference acceptance.
 
+### 2026-11-17 — Windows launcher validates inference content, not merely array presence
+
+- **Windows launcher integration change:** [`BV_Microsoft_Test` commit `d9ce896`](https://github.com/bosnatron/BV_Microsoft_Test/commit/d9ce89620fc5c68c3f21aaab324f7970da650bba) rejects Qwen chat responses lacking a populated assistant text choice and Nomic embedding responses with null, nonnumeric or nonfinite elements. [Test commit `75051c4`](https://github.com/bosnatron/BV_Microsoft_Test/commit/75051c4e28218a59f862278e931ec2273c2f6c76) adds four synthetic negative cases, bringing the Windows probe fixture to 12 defined cases.
+- **Execution evidence pending:** [Windows foundation run `44035372557`](https://github.com/bosnatron/BV_Microsoft_Test/actions/runs/44035372557) was in progress on inspection; do not claim the expanded fixture passed. Existing 8/8 synthetic run `44034611129` remains separate, accepted evidence. The fork's C++ HTTP 403 fix still lacks a verified Windows/Linux runtime run.
+- **Next:** inspect 12-case Windows job result, then run corrected fork inference HTTP smoke and final model-backed startup verification. No fork source change in this task.
+
 ## QA/QC required before acceptance
 
 1. Obtain a fresh Actions run on the new revision and confirm **both** Windows and Linux compilation, valid-chat HTTP 200, profile attestation, and security refusal checks. If HTTP 403 recurs, inspect the diagnostic response and fix its cause **without relaxing loopback, non-tool, no-browser, no-cache or role restrictions**.
