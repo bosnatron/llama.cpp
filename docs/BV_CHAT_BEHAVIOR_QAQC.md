@@ -47,6 +47,12 @@ Enforce `professional-v1` **only** for opt-in `BV_INFERENCE_ROLE=chat`. It instr
 - **Evidence state:** source change committed and test cases inspected; **no Windows/Linux execution result verified yet** for this test revision. A GitHub commit/status query returned no reported statuses, which alone does not establish that Actions ran or failed. Do not mark the repaired positive-chat HTTP 403 or negative tests PASS without job logs.
 - **Next:** collect the Windows/Linux `bv-inference-build.yml` run for commit `b36001d` (or dispatch the workflow manually if no run appears); inspect authorized HTTP 200 and denied HTTP 403 outcomes and profile attestation. Preserve failures and only then revise acceptance.
 
+### 2026-11-17 — Actions history check: no corrected-code CI run
+
+- **Read-only Actions verification:** GitHub Actions repository run listing (168 runs reported, first 30 most recent inspected) shows no run newer than 2026-11-15 and no workflow execution for corrected commits [`b1f2495`](https://github.com/bosnatron/llama.cpp/commit/b1f24951e0f346427373b17721c133f862b36359) or [`b36001d`](https://github.com/bosnatron/llama.cpp/commit/b36001dcbf3f95a8f9b50ed6c8248a6a35a16e32). Latest observed `BV inference-only fork build` is historical [run 43734669788](https://github.com/bosnatron/llama.cpp/actions/runs/43734669788) at `9c6f4ad`, failed on Windows and Linux (legitimate chat 403). A GitHub commit status list alone is not proof of a workflow run.
+- **Acceptance:** corrected-source Windows build, Linux build, positive chat HTTP 200, embedding HTTP 200, all negative HTTP 403, and professional-v1 attestation remain **NOT TESTED / NOT VERIFIED**. No deployment or workaround was performed.
+- **Blocker and next action:** no workflow-dispatch capability is exposed by the present GitHub connection; manually select **Actions → BV inference-only fork build → Run workflow → master** in the fork, then inspect both jobs and preserve log evidence before updating this record. Do not relax authorization or mark PASS without a linked run. The original `Bright_Vale` is untouched.
+
 ## QA/QC required before acceptance
 
 1. Obtain a fresh Actions run on the new revision and confirm **both** Windows and Linux compilation, valid-chat HTTP 200, profile attestation, and security refusal checks. If HTTP 403 recurs, inspect the diagnostic response and fix its cause **without relaxing loopback, non-tool, no-browser, no-cache or role restrictions**.
