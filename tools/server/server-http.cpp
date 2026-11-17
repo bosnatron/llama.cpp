@@ -40,7 +40,11 @@ static bv_inference_role bv_role_from_env() {
     return bv_inference_role::invalid;
 }
 
-static bool bv_is_allowed_request(bv_inference_role role, const httplib::Request & req) {
+// Pre-routing runs before cpp-httplib has read a POST body. Enforce network,
+// method, endpoint and content-type restrictions early; validate JSON only
+// inside the matched POST handler after its body has been read.
+static bool bv_is_allowed_request(bv_inference_role role, const httplib::Request & req,
+                                  bool before_body_read = false) {
     const auto host = host_name(req.get_header_value("Host"));
     if (!addr_is_loopback(req.remote_addr) ||
         !addr_is_loopback(req.local_addr) ||
@@ -57,6 +61,10 @@ static bool bv_is_allowed_request(bv_inference_role role, const httplib::Request
     if (req.method != "POST" || req.body.size() > 1048576 ||
         req.get_header_value("Content-Type").find("application/json") != 0) {
         return false;
+    }
+    if (before_body_read) {
+        return (role == bv_inference_role::chat && req.path == "/v1/chat/completions") ||
+               (role == bv_inference_role::embedding && req.path == "/v1/embeddings");
     }
     json body;
     try {
@@ -583,7 +591,7 @@ bool server_http_context::init_listener(const common_params & params) {
                 bv_role == bv_inference_role::chat ? "chat" : "embedding");
             res.set_header("Cache-Control", "no-store");
             res.set_header("Pragma", "no-cache");
-            if (!bv_is_allowed_request(bv_role, req)) {
+            if (!bv_is_allowed_request(bv_role, req, true)) {
                 res.status = 403;
                 res.set_content(
                     safe_json_to_str(json {
@@ -1017,8 +1025,24 @@ void server_http_context::post(const std::string & path, const server_http_conte
             }
         }
 
+        const bv_inference_role request_role = bv_role_from_env();
+        if (request_role != bv_inference_role::off &&
+            !bv_is_allowed_request(request_role, req)) {
+            res.status = 403;
+            res.set_content(
+                safe_json_to_str(json {
+                    {"error", {
+                        {"message", "BV inference-only endpoint denied"},
+                        {"type", "permission_error"},
+                        {"code", 403}
+                    }}
+                }),
+                "application/json; charset=utf-8"
+            );
+            return;
+        }
         if (path == "/v1/chat/completions" &&
-            bv_role_from_env() == bv_inference_role::chat) {
+            request_role == bv_inference_role::chat) {
             if (!bv_apply_chat_behavior(body)) {
                 res.status = 403;
                 res.set_content("BV chat request rejected", "text/plain; charset=utf-8");
