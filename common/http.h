@@ -1,6 +1,7 @@
 #pragma once
 
 #include "log.h"
+#include "bv-inference-network-policy.h"
 
 #include <cpp-httplib/httplib.h>
 
@@ -212,6 +213,10 @@ static bool common_http_proxy_bypass(const std::string & no_proxy, const std::st
 }
 
 static std::pair<httplib::Client, common_http_url> common_http_client(const std::string & url) {
+    // No HTTP client is allowed from a Bright Vale inference child. Block
+    // before URL parsing, DNS, proxy configuration, or any socket operation.
+    // Inference requests served on localhost do not use this client factory.
+    bv_refuse_outbound_http_client();
     common_http_url parts = common_http_parse_url(url);
 
     if (parts.host.empty()) {
