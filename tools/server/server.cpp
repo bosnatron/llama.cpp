@@ -9,6 +9,7 @@
 #include "arg.h"
 #include "build-info.h"
 #include "common.h"
+#include "bv-inference-network-policy.h"
 #include "fit.h"
 #include "llama.h"
 #include "log.h"
@@ -747,6 +748,15 @@ static int server_run_instance(common_params & params, server_role & role, commo
 //
 
 static int server_run(common_params & params, int argc, char ** argv, server_role & role, const server_run_opts & opts) {
+    // Guard BEFORE Hugging Face/Docker metadata resolution or router setup.
+    // Even a missing --offline flag must not make a BV child contact a host.
+    if (bv_inference_outbound_network_forbidden() &&
+        (!params.offline || params.model.path.empty() ||
+         !params.model.hf_repo.empty() || !params.model.docker_repo.empty())) {
+        SRV_ERR("%s", "BV inference-only mode requires a local model path and --offline; no remote metadata or downloads are allowed.\n");
+        return 1;
+    }
+
     common_models_handler models_handler;
 
     // -hf may name a preset repo, which makes this a router: settle that before deciding the role
