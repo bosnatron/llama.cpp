@@ -379,6 +379,12 @@ bool server_http_context::init(const common_params & params) {
         }
     }
     const gcp_params gcp;
+    // Cloud deployment compatibility may override the listener port. It is
+    // not allowed inside private BV inference, even if inherited by env.
+    if (bv_role != bv_inference_role::off && gcp.enabled) {
+        SRV_ERR("%s", "BV inference-only mode forbids cloud deployment / AIP_MODE routing.\n");
+        return false;
+    }
 
     path_prefix = params.api_prefix;
     port = params.port;
