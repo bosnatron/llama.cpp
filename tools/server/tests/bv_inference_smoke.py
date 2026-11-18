@@ -17,28 +17,21 @@ import time
 import urllib.error
 import urllib.request
 
-MODEL_URL = (
-    "https://huggingface.co/ggml-org/models-moved/resolve/"
-    "688f41ddf8f3622d08c6954a061ff12999b6c8d8/tinyllamas/stories260K.gguf"
-)
+# The smoke fixture is supplied locally; test execution must not download a
+# model, send host information, or depend on an external model registry.
 MODEL_SHA256 = "047bf46455a544931cff6fef14d7910154c56afbc23ab1c5e56a72e69912c04b"
 
 
-def test_model(directory):
-    path = Path(directory) / "stories260K.gguf"
-    candidate = os.environ.get("BV_TEST_MODEL_PATH")
-    if candidate:
-        path = Path(candidate)
-    else:
-        request = urllib.request.Request(
-            MODEL_URL, headers={"User-Agent": "BV-inference-smoke/1.0"}
+def test_model(_directory):
+    selected = os.environ.get("BV_TEST_MODEL_PATH")
+    if not selected:
+        raise RuntimeError(
+            "Set BV_TEST_MODEL_PATH to a pre-reviewed local test GGUF; "
+            "automatic network model downloads are forbidden."
         )
-        with urllib.request.urlopen(request, timeout=90) as response, path.open("wb") as target:
-            while True:
-                data = response.read(1024 * 1024)
-                if not data:
-                    break
-                target.write(data)
+    path = Path(selected).expanduser().resolve()
+    if not path.is_file():
+        raise RuntimeError("Pinned local test GGUF not found")
     with path.open("rb") as model:
         digest = hashlib.file_digest(model, "sha256").hexdigest()
     if digest != MODEL_SHA256:
